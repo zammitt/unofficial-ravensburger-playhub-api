@@ -59,11 +59,11 @@ const headers = {
   Referer: 'https://tcg.ravensburgerplay.com/',
 };
 
-type DiscordTimestampStyle = 't' | 'T' | 'd' | 'D' | 'f' | 'F' | 'R';
+type TimestampMarkupStyle = 't' | 'T' | 'd' | 'D' | 'f' | 'F' | 'R';
 
-function toDiscordTimestamp(
+function toTimestampMarkup(
   date: Date | string,
-  style: DiscordTimestampStyle = 'f'
+  style: TimestampMarkupStyle = 'f'
 ): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const unixSeconds = Math.floor(d.getTime() / 1000);
@@ -522,7 +522,7 @@ export async function searchStores(
   return result;
 }
 
-/** Format store for Discord - compact one-liner */
+/** Format store as compact one-liner text. */
 export function formatStoreCompact(gameStore: GameStore): string {
   const store = gameStore.store;
   const parts: string[] = [`**${store.name}**`];
@@ -681,7 +681,7 @@ export async function getEventStandings(
   return null;
 }
 
-/** Format a single standing entry for Discord (rank, name, record, optional OMWP/GWP). */
+/** Format a single standing entry (rank, name, record, optional OMWP/GWP). */
 export function formatStandingEntry(entry: StandingEntry, index: number): string {
   const rank = entry.rank ?? entry.placement ?? index + 1;
   const name =
@@ -1169,7 +1169,7 @@ export async function getPlayerLeaderboardByStore(
   };
 }
 
-/** Format one leaderboard row for Discord (single compact line). */
+/** Format one leaderboard row as a single compact line. */
 export function formatLeaderboardEntry(entry: PlayerStats, rank: number): string {
   const winRate =
     entry.totalWins + entry.totalLosses > 0
@@ -1189,7 +1189,7 @@ export function formatLeaderboardEntry(entry: PlayerStats, rank: number): string
   return `${rank}. ${entry.playerName} — ${entry.totalWins}W-${entry.totalLosses}L · ${entry.eventsPlayed} ${eventLabel} · ${winRate}% · Best ${entry.bestPlacement}${ord}`;
 }
 
-/** Build full leaderboard message for Discord. */
+/** Build full leaderboard text. */
 export function formatLeaderboard(
   result: LeaderboardResult,
   sortLabel: string
@@ -1226,12 +1226,12 @@ export function formatLeaderboard(
 
 // ============ Events ============
 
-/** Format event for Discord - compact one-liner */
+/** Format event as compact one-liner text. */
 export function formatEventCompact(event: Event): string {
   const link = `[${event.name}](<https://tcg.ravensburgerplay.com/events/${event.id}>)`;
 
-  // Format date/time using Discord timestamps (renders in reader's local timezone)
-  const dateTime = toDiscordTimestamp(event.start_datetime, 'f');
+  // Use timestamp markup that renders in the reader's local timezone.
+  const dateTime = toTimestampMarkup(event.start_datetime, 'f');
 
   // Store
   const store = event.store?.name || '';

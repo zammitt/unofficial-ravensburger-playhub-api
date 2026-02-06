@@ -40,7 +40,7 @@ export async function geocodeCity(
 
   const url = `${NOMINATIM_URL}?q=${encodeURIComponent(city)}&format=json&limit=1`;
   const res = await fetchWithRetry(url, {
-    headers: { 'User-Agent': 'lorcana-discord-bot/1.0' },
+    headers: { 'User-Agent': 'lorcana-playhub-api/1.0' },
   });
 
   if (!res.ok) return null;

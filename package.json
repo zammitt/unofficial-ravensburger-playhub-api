@@ -1,7 +1,7 @@
 {
   "name": "unofficial-ravensburger-playhub-api",
   "version": "0.1.0",
-  "description": "Shared Ravensburger PlayHub API library for MCP and Discord bot consumers",
+  "description": "Shared Ravensburger PlayHub API library for MCP and app consumers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
