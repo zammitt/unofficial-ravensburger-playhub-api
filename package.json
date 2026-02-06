@@ -1,0 +1,41 @@
+{
+  "name": "unofficial-ravensburger-playhub-api",
+  "version": "0.1.0",
+  "description": "Shared Ravensburger PlayHub API library for MCP and Discord bot consumers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./bot": {
+      "types": "./dist/bot/index.d.ts",
+      "default": "./dist/bot/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "lorcana",
+    "ravensburger",
+    "playhub",
+    "api"
+  ],
+  "license": "Unlicense",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3"
+  }
+}
