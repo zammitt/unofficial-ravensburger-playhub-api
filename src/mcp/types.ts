@@ -13,6 +13,26 @@ export interface EventCategory {
   name: string;
 }
 
+export interface EventQuickFilterConfig {
+  numMiles?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  eventConfigurationTemplateId?: string | null;
+  displayStatuses?: string[];
+  search?: string | null;
+  location?: string | null;
+  placeId?: string | null;
+  [key: string]: unknown;
+}
+
+export interface EventQuickFilter {
+  id: number;
+  name: string;
+  description?: string;
+  filter_config: EventQuickFilterConfig;
+  [key: string]: unknown;
+}
+
 export interface Store {
   id: number;
   name: string;
@@ -49,6 +69,47 @@ export interface StoresResponse {
   next_page_number: number | null;
   previous_page_number: number | null;
   results: GameStore[];
+}
+
+export interface GeocodeAddress {
+  address1?: string;
+  address2?: string;
+  formattedAddress: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  country?: string;
+  lat: number;
+  lng: number;
+}
+
+export interface GeocodeResult {
+  address: GeocodeAddress;
+  placeId?: string;
+  bounds?: {
+    northeast?: { lat: number; lng: number };
+    southwest?: { lat: number; lng: number };
+  };
+  types?: string[];
+}
+
+export interface PlaceAutocompleteSuggestion {
+  kind?: string;
+  placePrediction?: {
+    placeId?: string;
+    place?: string;
+    text?: { text?: string };
+    structuredFormat?: {
+      mainText?: { text?: string };
+      secondaryText?: { text?: string };
+    };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+export interface PlaceAutocompleteResponse {
+  suggestions: PlaceAutocompleteSuggestion[];
 }
 
 /** A single tournament round (from event details). */
@@ -186,6 +247,46 @@ export interface MatchesResponse {
   results: RoundMatchEntry[];
 }
 
+export interface DeckbuilderCard {
+  id: string;
+  name: string;
+  display_name?: string;
+  image_url?: string;
+  set_name?: string;
+  set_code?: string;
+  collector_number?: string;
+  type_line?: string;
+  rarity?: string;
+  ink_type?: string | null;
+  ink_cost?: number | null;
+  strength?: number | null;
+  willpower?: number | null;
+  lore_value?: number | null;
+  rules_text?: string;
+  flavor_text?: string;
+  [key: string]: unknown;
+}
+
+export interface CardQuickSearchResponse {
+  count: number;
+  results: DeckbuilderCard[];
+}
+
+export interface CardSearchWithFiltersResponse {
+  cards: DeckbuilderCard[];
+  total: number;
+  has_more: boolean;
+  limit: number;
+  offset: number;
+}
+
+export interface GameSummary {
+  id: number;
+  name: string;
+  slug: string;
+  [key: string]: unknown;
+}
+
 /** Event registrations (paginated). */
 export interface RegistrationEntry {
   id?: number;
@@ -236,5 +337,5 @@ export interface LeaderboardResult {
   eventsAnalyzed: number;
   eventsIncluded: Array<{ id: number; name: string; startDate: string }>;
   dateRange: { start: string; end: string };
-  filters?: { city?: string; store?: string; categories?: string[]; formats?: string[] };
+  filters?: { city?: string; store?: string; categories?: string[]; formats?: string[]; minRounds?: number };
 }

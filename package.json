@@ -1,6 +1,6 @@
 {
   "name": "unofficial-ravensburger-playhub-api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared Ravensburger PlayHub API library for MCP and app consumers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,6 +21,10 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
+    "test:integration:mcp": "npm run build && node --test dist/test/mcp-api.integration.test.js",
+    "test:integration:bot": "npm run build && node --test dist/test/bot-api.integration.test.js",
+    "test:integration": "npm run test:integration:mcp && npm run test:integration:bot",
+    "test": "npm run test:integration",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build"
   },

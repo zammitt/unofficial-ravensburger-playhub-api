@@ -717,7 +717,7 @@ export function formatStandingEntry(entry: StandingEntry, index: number): string
 
 // ============ Player leaderboard (aggregate standings across events) ============
 
-export const MAX_LEADERBOARD_DATE_RANGE_DAYS = 93;
+export const MAX_LEADERBOARD_DATE_RANGE_DAYS = 365;
 export const MAX_LEADERBOARD_RADIUS_MILES = 100;
 export const MAX_LEADERBOARD_LIMIT = 100;
 
@@ -742,7 +742,7 @@ export interface LeaderboardResult {
   eventsAnalyzed: number;
   eventsIncluded: Array<{ id: number; name: string; startDate: string }>;
   dateRange: { start: string; end: string };
-  filters?: { city?: string; store?: string };
+  filters?: { city?: string; store?: string; minRounds?: number };
 }
 
 function parseRecordToWinsLosses(
@@ -967,10 +967,11 @@ export interface GetPlayerLeaderboardByCityParams {
   radiusMiles?: number;
   limit?: number;
   minEvents?: number;
+  minRounds?: number;
   sortBy?: LeaderboardSortBy;
 }
 
-/** Aggregate player leaderboard for past and in-progress events near a city (date range max 93 days). */
+/** Aggregate player leaderboard for past and in-progress events near a city (date range max 365 days). */
 export async function getPlayerLeaderboardByCity(
   params: GetPlayerLeaderboardByCityParams
 ): Promise<LeaderboardResult | { error: string }> {
@@ -981,6 +982,7 @@ export async function getPlayerLeaderboardByCity(
     radiusMiles = 50,
     limit = 20,
     minEvents = 1,
+    minRounds,
     sortBy = 'total_wins',
   } = params;
 
@@ -997,7 +999,7 @@ export async function getPlayerLeaderboardByCity(
   );
   if (daysDiff > MAX_LEADERBOARD_DATE_RANGE_DAYS) {
     return {
-      error: `Date range cannot exceed ${MAX_LEADERBOARD_DATE_RANGE_DAYS} days (about 3 months).`,
+      error: `Date range cannot exceed ${MAX_LEADERBOARD_DATE_RANGE_DAYS} days (about 1 year).`,
     };
   }
 
@@ -1048,8 +1050,17 @@ export async function getPlayerLeaderboardByCity(
   }
 
   const eventStandings = await fetchAllEventStandings(allEvents.map((e) => e.id));
+  let filteredStandings = eventStandings;
+  if (minRounds) {
+    filteredStandings = filteredStandings.filter(({ event }) => {
+      const totalRounds = (event.tournament_phases ?? []).reduce(
+        (sum, phase) => sum + (phase.rounds?.length ?? 0), 0
+      );
+      return totalRounds >= minRounds;
+    });
+  }
   const players = aggregateStandingsToPlayers(
-    eventStandings,
+    filteredStandings,
     minEventsCap,
     sortBy,
     limitCap
@@ -1057,14 +1068,14 @@ export async function getPlayerLeaderboardByCity(
 
   return {
     players,
-    eventsAnalyzed: eventStandings.length,
-    eventsIncluded: eventStandings.map(({ event }) => ({
+    eventsAnalyzed: filteredStandings.length,
+    eventsIncluded: filteredStandings.map(({ event }) => ({
       id: event.id,
       name: event.name,
       startDate: event.start_datetime.slice(0, 10),
     })),
     dateRange: { start: startDate, end: endDate },
-    filters: { city: geo.display_name },
+    filters: { city: geo.display_name, ...(minRounds ? { minRounds } : {}) },
   };
 }
 
@@ -1075,10 +1086,11 @@ export interface GetPlayerLeaderboardByStoreParams {
   endDate: string;
   limit?: number;
   minEvents?: number;
+  minRounds?: number;
   sortBy?: LeaderboardSortBy;
 }
 
-/** Aggregate player leaderboard for past and in-progress events at a specific store (date range max 93 days). */
+/** Aggregate player leaderboard for past and in-progress events at a specific store (date range max 365 days). */
 export async function getPlayerLeaderboardByStore(
   params: GetPlayerLeaderboardByStoreParams
 ): Promise<LeaderboardResult | { error: string }> {
@@ -1089,6 +1101,7 @@ export async function getPlayerLeaderboardByStore(
     endDate,
     limit = 20,
     minEvents = 1,
+    minRounds,
     sortBy = 'total_wins',
   } = params;
 
@@ -1105,7 +1118,7 @@ export async function getPlayerLeaderboardByStore(
   );
   if (daysDiff > MAX_LEADERBOARD_DATE_RANGE_DAYS) {
     return {
-      error: `Date range cannot exceed ${MAX_LEADERBOARD_DATE_RANGE_DAYS} days (about 3 months).`,
+      error: `Date range cannot exceed ${MAX_LEADERBOARD_DATE_RANGE_DAYS} days (about 1 year).`,
     };
   }
 
@@ -1149,8 +1162,17 @@ export async function getPlayerLeaderboardByStore(
   }
 
   const eventStandings = await fetchAllEventStandings(allEvents.map((e) => e.id));
+  let filteredStandings = eventStandings;
+  if (minRounds) {
+    filteredStandings = filteredStandings.filter(({ event }) => {
+      const totalRounds = (event.tournament_phases ?? []).reduce(
+        (sum, phase) => sum + (phase.rounds?.length ?? 0), 0
+      );
+      return totalRounds >= minRounds;
+    });
+  }
   const players = aggregateStandingsToPlayers(
-    eventStandings,
+    filteredStandings,
     minEventsCap,
     sortBy,
     limitCap
@@ -1158,14 +1180,14 @@ export async function getPlayerLeaderboardByStore(
 
   return {
     players,
-    eventsAnalyzed: eventStandings.length,
-    eventsIncluded: eventStandings.map(({ event }) => ({
+    eventsAnalyzed: filteredStandings.length,
+    eventsIncluded: filteredStandings.map(({ event }) => ({
       id: event.id,
       name: event.name,
       startDate: event.start_datetime.slice(0, 10),
     })),
     dateRange: { start: startDate, end: endDate },
-    filters: { store: resolvedStoreLabel ?? `Store ${storeId}` },
+    filters: { store: resolvedStoreLabel ?? `Store ${storeId}`, ...(minRounds ? { minRounds } : {}) },
   };
 }
 
@@ -1198,6 +1220,7 @@ export function formatLeaderboard(
   const filterParts: string[] = [];
   if (result.filters?.city) filterParts.push(`near ${result.filters.city}`);
   if (result.filters?.store) filterParts.push(`at ${result.filters.store}`);
+  if (result.filters?.minRounds) filterParts.push(`min ${result.filters.minRounds} rounds`);
   const filterStr = filterParts.length > 0 ? ` (${filterParts.join(' | ')})` : '';
   lines.push(`**Player Leaderboard**${filterStr}`);
   lines.push(

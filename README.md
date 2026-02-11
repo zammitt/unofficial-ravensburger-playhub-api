@@ -20,3 +20,16 @@ npm install unofficial-ravensburger-playhub-api
 ```bash
 npm run build
 ```
+
+## Integration tests
+
+```bash
+# MCP-facing API surface
+npm run test:integration:mcp
+
+# Bot-facing API surface
+npm run test:integration:bot
+
+# Run both
+npm test
+```

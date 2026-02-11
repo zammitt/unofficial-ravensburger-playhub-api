@@ -3,12 +3,19 @@
  */
 
 import type {
+  CardQuickSearchResponse,
+  CardSearchWithFiltersResponse,
+  DeckbuilderCard,
   Event,
   EventCategory,
+  EventQuickFilter,
   EventsResponse,
-  GameplayFormat,
+  GameSummary,
   GameStore,
+  GeocodeResult,
+  GameplayFormat,
   MatchesResponse,
+  PlaceAutocompleteResponse,
   RegistrationsResponse,
   StandingEntry,
   StandingsResponse,
@@ -17,6 +24,7 @@ import type {
 import { fetchWithRetry } from "./http.js";
 
 const API_BASE = "https://api.cloudflare.ravensburgerplay.com/hydraproxy/api/v2";
+const PLAYHUB_WEB_BASE = "https://tcg.ravensburgerplay.com";
 const DEBUG_API_LOGGING = /^(1|true|yes|on)$/i.test(process.env.LORCANA_MCP_DEBUG ?? "");
 
 function debugApiLog(message: string): void {
@@ -135,6 +143,135 @@ export async function fetchCategories(): Promise<EventCategory[]> {
   return response.json();
 }
 
+export async function fetchEventQuickFilters(gameSlug: string = "disney-lorcana"): Promise<EventQuickFilter[]> {
+  const url = `${API_BASE}/events/quick-filters/?game_slug=${encodeURIComponent(gameSlug)}`;
+  const response = await fetchWithRetry(url, {
+    headers: { Referer: "https://tcg.ravensburgerplay.com/" },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch quick filters: ${response.status} ${response.statusText} - ${text}`);
+  }
+  return response.json();
+}
+
+export async function fetchGames(): Promise<GameSummary[]> {
+  const url = `${API_BASE}/games/?lookup=slug&getFullData=0&timezoneOffset=0`;
+  const response = await fetchWithRetry(url, {
+    headers: { Referer: "https://tcg.ravensburgerplay.com/" },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch games: ${response.status} ${response.statusText} - ${text}`);
+  }
+  return response.json();
+}
+
+export async function fetchGameDetails(gameSlug: string): Promise<GameSummary> {
+  const url = `${API_BASE}/games/${encodeURIComponent(gameSlug)}/?lookup=slug&getFullData=1&timezoneOffset=0`;
+  const response = await fetchWithRetry(url, {
+    headers: { Referer: "https://tcg.ravensburgerplay.com/" },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch game details: ${response.status} ${response.statusText} - ${text}`);
+  }
+  return response.json();
+}
+
+export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
+  const url = `${PLAYHUB_WEB_BASE}/api/address/geocode?address=${encodeURIComponent(address)}`;
+  const response = await fetchWithRetry(url, {
+    headers: { Referer: "https://tcg.ravensburgerplay.com/" },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to geocode address: ${response.status} ${response.statusText} - ${text}`);
+  }
+  const payload = await response.json() as { data?: GeocodeResult | null; error?: unknown };
+  return payload.data ?? null;
+}
+
+export async function geocodePlaceId(placeId: string): Promise<GeocodeResult | null> {
+  const url = `${PLAYHUB_WEB_BASE}/api/address/geocode?placeId=${encodeURIComponent(placeId)}`;
+  const response = await fetchWithRetry(url, {
+    headers: { Referer: "https://tcg.ravensburgerplay.com/" },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to geocode place ID: ${response.status} ${response.statusText} - ${text}`);
+  }
+  const payload = await response.json() as { data?: GeocodeResult | null; error?: unknown };
+  return payload.data ?? null;
+}
+
+export async function autocompletePlaces(query: string, sessionToken: string): Promise<PlaceAutocompleteResponse> {
+  const url = `${PLAYHUB_WEB_BASE}/api/google/places/autocomplete-places?q=${encodeURIComponent(query)}&t=${encodeURIComponent(sessionToken)}&field_mask=suggestions`;
+  const response = await fetchWithRetry(url, {
+    headers: { Referer: "https://tcg.ravensburgerplay.com/" },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to autocomplete places: ${response.status} ${response.statusText} - ${text}`);
+  }
+  return response.json();
+}
+
+export async function searchCardsQuick(query: string, gameId: number = 1): Promise<CardQuickSearchResponse> {
+  const url = `${API_BASE}/deckbuilder/cards/quick-search/`;
+  const response = await fetchWithRetry(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Referer: "https://tcg.ravensburgerplay.com/",
+    },
+    body: JSON.stringify({ query, game_id: gameId }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to search cards: ${response.status} ${response.statusText} - ${text}`);
+  }
+  return response.json();
+}
+
+export async function searchCardsWithFilters(
+  query: string,
+  gameId: number = 1,
+  limit: number = 50,
+  offset: number = 0
+): Promise<CardSearchWithFiltersResponse> {
+  const url = `${API_BASE}/deckbuilder/cards/search-with-filters/`;
+  const response = await fetchWithRetry(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Referer: "https://tcg.ravensburgerplay.com/",
+    },
+    body: JSON.stringify({ query, game_id: gameId, limit, offset }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to search cards with filters: ${response.status} ${response.statusText} - ${text}`);
+  }
+  return response.json();
+}
+
+export async function fetchCardById(cardId: string): Promise<DeckbuilderCard> {
+  const url = `${API_BASE}/deckbuilder/cards/${encodeURIComponent(cardId)}/`;
+  const response = await fetchWithRetry(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Referer: "https://tcg.ravensburgerplay.com/",
+    },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch card details: ${response.status} ${response.statusText} - ${text}`);
+  }
+  return response.json();
+}
+
 export async function fetchEvents(params: Record<string, string | string[]>): Promise<EventsResponse> {
   const url = new URL(`${API_BASE}/events/`);
 
@@ -230,9 +367,11 @@ export async function fetchTournamentRoundStandings(
   page: number = 1,
   pageSize: number = 25
 ): Promise<StandingsResponse> {
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, pageSize);
   const url = new URL(`${API_BASE}/tournament-rounds/${roundId}/standings/paginated/`);
-  url.searchParams.set("page", page.toString());
-  url.searchParams.set("page_size", pageSize.toString());
+  url.searchParams.set("page", safePage.toString());
+  url.searchParams.set("page_size", safePageSize.toString());
 
   const response = await fetchWithRetry(url.toString(), {
     method: "GET",
@@ -247,7 +386,70 @@ export async function fetchTournamentRoundStandings(
     throw new Error(`API request failed: ${response.status} ${response.statusText} - ${text}`);
   }
 
-  return response.json();
+  const paginated = await response.json() as StandingsResponse;
+  if (
+    (paginated.results?.length ?? 0) > 0 ||
+    (paginated.total ?? 0) > 0 ||
+    (paginated.count ?? 0) > 0
+  ) {
+    return paginated;
+  }
+
+  // Some rounds return empty paginated standings while non-paginated standings has data.
+  // Fallback preserves pagination contract for callers while returning actual standings.
+  try {
+    const fullStandings = await fetchTournamentRoundStandingsUnpaginated(roundId);
+    if (fullStandings.length > 0) {
+      return paginateStandings(fullStandings, safePage, safePageSize);
+    }
+  } catch {
+    // Keep the paginated empty response if fallback fails.
+  }
+
+  return paginated;
+}
+
+function paginateStandings(
+  standings: StandingEntry[],
+  page: number,
+  pageSize: number
+): StandingsResponse {
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, pageSize);
+  const total = standings.length;
+  const startIndex = (safePage - 1) * safePageSize;
+  const endIndex = startIndex + safePageSize;
+  const results = standings.slice(startIndex, endIndex);
+  const totalPages = Math.max(1, Math.ceil(total / safePageSize));
+
+  return {
+    count: results.length,
+    total,
+    page_size: safePageSize,
+    current_page_number: safePage,
+    next_page_number: safePage < totalPages ? safePage + 1 : null,
+    previous_page_number: safePage > 1 && safePage <= totalPages ? safePage - 1 : null,
+    results,
+  };
+}
+
+async function fetchTournamentRoundStandingsUnpaginated(roundId: number): Promise<StandingEntry[]> {
+  const url = `${API_BASE}/tournament-rounds/${roundId}/standings/`;
+  const response = await fetchWithRetry(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Referer: "https://tcg.ravensburgerplay.com/",
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`API request failed: ${response.status} ${response.statusText} - ${text}`);
+  }
+
+  const payload = await response.json() as { standings?: StandingEntry[] };
+  return payload.standings ?? [];
 }
 
 export async function fetchTournamentRoundMatches(
@@ -286,6 +488,24 @@ export async function fetchStores(params: Record<string, string>): Promise<Store
   }
 
   const response = await fetchWithRetry(url.toString(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Referer: "https://tcg.ravensburgerplay.com/",
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`API request failed: ${response.status} ${response.statusText} - ${text}`);
+  }
+
+  return response.json();
+}
+
+export async function fetchStoreDetails(storeId: string): Promise<GameStore> {
+  const url = `${API_BASE}/game-stores/${encodeURIComponent(storeId)}/`;
+  const response = await fetchWithRetry(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
