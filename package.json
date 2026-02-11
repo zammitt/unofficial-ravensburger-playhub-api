@@ -1,6 +1,6 @@
 {
   "name": "unofficial-ravensburger-playhub-api",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Shared Ravensburger PlayHub API library for MCP and app consumers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

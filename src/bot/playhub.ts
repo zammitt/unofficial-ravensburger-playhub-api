@@ -595,13 +595,47 @@ export async function getTournamentRoundStandings(
   if (!res.ok) {
     return { error: `API error: ${res.status}` };
   }
-  const data = (await res.json()) as StandingsResponse;
+  let data = (await res.json()) as StandingsResponse;
   const ttlMs =
     options?.isPastEvent === true
       ? LEADERBOARD_CACHE_TTL_PAST_MS
       : LEADERBOARD_CACHE_TTL_IN_PROGRESS_MS;
+
+  // Some older events return empty paginated standings while unpaginated has data.
+  if (data.results.length === 0 && (data.total ?? 0) === 0) {
+    try {
+      const fallback = await fetchUnpaginatedStandings(roundId);
+      if (fallback.length > 0) {
+        const safePage = Math.max(1, page);
+        const safePageSize = Math.max(1, pageSize);
+        const start = (safePage - 1) * safePageSize;
+        const sliced = fallback.slice(start, start + safePageSize);
+        const totalPages = Math.max(1, Math.ceil(fallback.length / safePageSize));
+        data = {
+          count: sliced.length,
+          total: fallback.length,
+          page_size: safePageSize,
+          current_page_number: safePage,
+          next_page_number: safePage < totalPages ? safePage + 1 : null,
+          previous_page_number: safePage > 1 ? safePage - 1 : null,
+          results: sliced,
+        };
+      }
+    } catch {
+      // keep original empty response
+    }
+  }
+
   roundStandingsCache.set(cacheKey, data, ttlMs);
   return data;
+}
+
+async function fetchUnpaginatedStandings(roundId: number): Promise<StandingEntry[]> {
+  const url = `${API_BASE}/tournament-rounds/${roundId}/standings/`;
+  const res = await fetchWithRetry(url, { headers });
+  if (!res.ok) return [];
+  const payload = (await res.json()) as { standings?: StandingEntry[] };
+  return payload.standings ?? [];
 }
 
 /** Priority for round order: try rounds that likely have final standings first (0 = highest). */
