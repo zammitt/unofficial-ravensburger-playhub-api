@@ -717,7 +717,7 @@ export function formatStandingEntry(entry: StandingEntry, index: number): string
 
 // ============ Player leaderboard (aggregate standings across events) ============
 
-export const MAX_LEADERBOARD_DATE_RANGE_DAYS = 365;
+export const MAX_LEADERBOARD_DATE_RANGE_DAYS = 366;
 export const MAX_LEADERBOARD_RADIUS_MILES = 100;
 export const MAX_LEADERBOARD_LIMIT = 100;
 
