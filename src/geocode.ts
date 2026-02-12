@@ -1,10 +1,10 @@
 /**
  * Shared geocoding via OpenStreetMap Nominatim with in-memory TTL cache.
- * Single implementation used by playhub (events/stores by city) and digest subscriptions
+ * Single implementation used by search helpers and digest subscriptions
  * to avoid duplicate rate-limited calls and inconsistent behavior.
  */
 
-import { fetchWithRetry } from './fetchWithRetry.js';
+import { fetchWithRetry } from './http.js';
 import { createTtlCache } from './ttlCache.js';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
@@ -13,9 +13,9 @@ const GEO_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 /** Max geocode entries to avoid unbounded memory growth; LRU eviction. */
 const GEO_CACHE_MAX_SIZE = 500;
 
-const geocodeCache = createTtlCache<GeocodeResult>({ maxSize: GEO_CACHE_MAX_SIZE });
+const geocodeCache = createTtlCache<GeocodeCityResult>({ maxSize: GEO_CACHE_MAX_SIZE });
 
-export interface GeocodeResult {
+export interface GeocodeCityResult {
   lat: number;
   lon: number;
   display_name: string;
@@ -33,7 +33,7 @@ interface NominatimResult {
  */
 export async function geocodeCity(
   city: string
-): Promise<GeocodeResult | null> {
+): Promise<GeocodeCityResult | null> {
   const cacheKey = `geocode:${city.toLowerCase()}`;
   const cached = geocodeCache.get(cacheKey);
   if (cached) return cached;
@@ -48,7 +48,7 @@ export async function geocodeCity(
   const data = (await res.json()) as NominatimResult[];
   if (!data.length) return null;
 
-  const result: GeocodeResult = {
+  const result: GeocodeCityResult = {
     lat: parseFloat(data[0]!.lat),
     lon: parseFloat(data[0]!.lon),
     display_name: data[0]!.display_name,

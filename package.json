@@ -1,29 +1,31 @@
 {
   "name": "unofficial-ravensburger-playhub-api",
-  "version": "0.2.3",
-  "description": "Shared Ravensburger PlayHub API library for MCP and app consumers",
+  "version": "0.3.0",
+  "description": "Unofficial Ravensburger PlayHub API client for Disney Lorcana events, stores, standings, cards, and leaderboards",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./bot": {
-      "types": "./dist/bot/index.d.ts",
-      "default": "./dist/bot/index.js"
     }
   },
   "files": [
-    "dist",
+    "dist/index.*",
+    "dist/types.*",
+    "dist/http.*",
+    "dist/api.*",
+    "dist/search.*",
+    "dist/leaderboard.*",
+    "dist/format.*",
+    "dist/geocode.*",
+    "dist/ttlCache.*",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test:integration:mcp": "npm run build && node --test dist/test/mcp-api.integration.test.js",
-    "test:integration:bot": "npm run build && node --test dist/test/bot-api.integration.test.js",
-    "test:integration": "npm run test:integration:mcp && npm run test:integration:bot",
+    "test:integration": "npm run build && node --test dist/test/integration.test.js",
     "test": "npm run test:integration",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build"
@@ -32,7 +34,10 @@
     "lorcana",
     "ravensburger",
     "playhub",
-    "api"
+    "api",
+    "disney-lorcana",
+    "events",
+    "tournaments"
   ],
   "license": "Unlicense",
   "engines": {

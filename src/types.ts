@@ -1,5 +1,5 @@
 /**
- * Shared types for the Lorcana Event Finder MCP server (API responses and domain models).
+ * Shared types for the Ravensburger PlayHub API (response models and domain types).
  */
 
 export interface GameplayFormat {
@@ -52,13 +52,15 @@ export interface Store {
   facebook_url?: string;
   twitter_handle?: string;
   instagram_handle?: string;
+  distance_in_miles?: number;
 }
 
 export interface GameStore {
   id: string;
   store: Store;
-  store_types: string[];
-  store_types_pretty: string[];
+  store_types?: string[];
+  store_types_pretty?: string[];
+  distance_in_miles?: number;
 }
 
 export interface StoresResponse {
